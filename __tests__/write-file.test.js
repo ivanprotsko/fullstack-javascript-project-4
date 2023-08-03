@@ -9,5 +9,5 @@ const data = 'test-data';
 test('Create file', async () => {
   expect(await writeFile(filePath, data))
     .toEqual('success');
-})
+});
 afterAll(async () => await fsp.rm(filePath));
