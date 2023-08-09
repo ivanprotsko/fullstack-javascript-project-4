@@ -15,6 +15,7 @@ const config = {
 }
 
 export const createFolder = async (path) => {
+
   try {
     await fsp.mkdir(path);
     return 'success';
@@ -22,7 +23,6 @@ export const createFolder = async (path) => {
     console.error(error);
   }
 };
-
 export const doesFolderExist = (path) => {
   try {
     return fsp.access(path)
@@ -44,7 +44,7 @@ export const createName = (url, format) => {
 
 const changeDomWithLocalHrefPaths = (elements, directory) => {
     elements.map((elementObject) => {
-        const { element, assetsFolderPath, href, fileFormat } = elementObject;
+        const { element, href, fileFormat } = elementObject;
         const filePath = `${directory}/${createName(href, fileFormat)}`;
         const absolutePath = path.resolve(filePath);
         const attribute = element.hasAttribute('src') ? 'src' : 'href';
@@ -80,11 +80,21 @@ export const getHtmlElementHref = (element) => {
   return element[attribute];
 };
 
-const getBinaryDataFromUrl = async (href) => {
+export const getBinaryDataFromUrl = async (href) => {
+  try {
     return await axios.get(href, { responseType: 'arraybuffer' })
-        .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
+      .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
+  } catch (error) {
+    console.log(error);
+  }
 }
-const writeBinaryData = async (data, path) => await fsp.writeFile(path, data, 'binary');
+const writeBinaryData = async (data, path) => {
+  try {
+    await fsp.writeFile(path, data, 'binary')
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const getFileFormat = (path) => path.split('.').pop();
 export const downloadAssetElements = (elements, filesFolder) => {
@@ -100,7 +110,6 @@ export default async (url, directory) => {
   let pageDom;
   let finalHtml;
 
-  console.log(path.resolve('tmp'));
   await doesFolderExist(directory)
     .catch(() => createFolder(directory))
     .then(() => doesFolderExist(assetsFolderPath))
@@ -112,10 +121,14 @@ export default async (url, directory) => {
     .then((elementObjects) => downloadAssetElements(elementObjects, assetsFolderPath))
     .then(() => {
       const finalHtml = pageDom.window.document.documentElement.innerHTML;
-      fsp.writeFile(
-        `${directory}/${createName(url, 'html')}`,
-        finalHtml,
-        {encoding: 'utf8'}
-      )
+      try {
+        fsp.writeFile(
+          `${directory}/${createName(url, 'html')}`,
+          finalHtml,
+          {encoding: 'utf8'}
+        )
+      } catch (error) {
+        console.log(error);
+      }
     });
 };

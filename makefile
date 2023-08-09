@@ -16,5 +16,11 @@ lint:
 test:
 	npm run test
 
+debug-page-loader:
+	DEBUG=page-loader node ./bin/page-loader.js https://ru.hexlet.1io/courses 2>> ./logs/page-loader.log
+
+test-watch:
+	npm run test-watch
+
 test-coverage:
 	npm test -- --coverage --coverageProvider=v8
