@@ -21,13 +21,7 @@ export const createFolder = (folderPath) => {
   }
   return 'success';
 };
-export const doesFolderExist = (folderPath) => {
-  try {
-    return fsp.access(folderPath);
-  } catch (error) {
-    console.error(error);
-  }
-};
+export const doesFolderExist = (folderPath) => fsp.access(folderPath);
 
 export const createName = (url, format) => {
   const link = new URL(url);
@@ -88,16 +82,10 @@ export const selectAssetElements = (dom, tags, fileFormats) => {
   return elements;
 };
 
-export const getBinaryDataFromUrl = async (href) => await axios.get(href, { responseType: 'arraybuffer' })
-      .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
+export const getBinaryDataFromUrl = (href) => axios.get(href, { responseType: 'arraybuffer' })
+  .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
 
-const writeBinaryData = async (data, filePath) => {
-  try {
-    await fsp.writeFile(filePath, data, 'binary');
-  } catch (error) {
-    console.log(error);
-  }
-};
+const writeBinaryData = (data, filePath) => fsp.writeFile(filePath, data, 'binary');
 
 export const downloadAssetElements = (elements, filesFolder) => elements.map(async (element) => {
   const data = await getBinaryDataFromUrl(element.href);

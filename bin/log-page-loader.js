@@ -1,3 +1,4 @@
 import debug from 'debug';
 
-export const logPageLoader = debug('page-loader');
+const logPageLoader = debug('page-loader');
+export default logPageLoader;
