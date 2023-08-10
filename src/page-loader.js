@@ -2,6 +2,7 @@ import axios from 'axios';
 import fsp from 'fs/promises';
 import jsdom from 'jsdom';
 import path from 'path';
+import axiosDebugLog from 'axios-debug-log';
 
 const config = {
   tags: [

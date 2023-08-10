@@ -19,6 +19,9 @@ test:
 debug-page-loader:
 	DEBUG=page-loader node ./bin/page-loader.js https://ru.hexlet.1io/courses 2>> ./logs/page-loader.log
 
+debug-axios:
+	DEBUG=axios node --require axios-debug-log ./bin/page-loader.js https://ru.hexlet.1io/courses 2>> ./logs/axios.log
+
 test-watch:
 	npm run test-watch
 
