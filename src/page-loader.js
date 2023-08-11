@@ -2,7 +2,6 @@ import axios from 'axios';
 import fsp from 'fs/promises';
 import jsdom from 'jsdom';
 import path from 'path';
-import axiosDebugLog from 'axios-debug-log';
 
 const config = {
   tags: [
@@ -22,6 +21,7 @@ export const createFolder = (folderPath) => {
   }
   return 'success';
 };
+
 export const doesFolderExist = (folderPath) => fsp.access(folderPath);
 
 export const createName = (url, format) => {
@@ -38,6 +38,7 @@ export const createName = (url, format) => {
   const separator = (format === 'files') ? '_' : '.';
   return [name, format].join(separator);
 };
+
 export const getFileFormat = (filePath) => {
   const splitPath = filePath.split('.');
   return splitPath[splitPath.length - 1];
@@ -46,6 +47,7 @@ export const getHtmlElementHref = (element) => {
   const attribute = element.hasAttribute('src') ? 'src' : 'href';
   return element[attribute];
 };
+
 const changeDomWithLocalHrefPaths = (elements, directory) => elements.map((elementObject) => {
   const { element, href, fileFormat } = elementObject;
   const filePath = `${directory}/${createName(href, fileFormat)}`;
@@ -54,6 +56,7 @@ const changeDomWithLocalHrefPaths = (elements, directory) => elements.map((eleme
   element[attribute] = absolutePath;
   return elementObject;
 });
+
 const getHtmlElementLinkAttribute = (element) => {
   const attribute = element.hasAttribute('src') ? 'src' : 'href';
   return attribute;
@@ -96,6 +99,11 @@ export const downloadAssetElements = (elements, filesFolder) => elements.map(asy
 export default async (url, directory) => {
   const assetsFolderPath = `${directory}/${createName(url, 'files')}`;
   const { tags, fileFormats } = config;
+
+  // var github = axios.create({ baseURL: 'https://api.github.com/' })
+  // var githubLogger = require('debug')('github')
+  // debug()
+  // axiosDebugLog.addLogger(github, githubLogger)
 
   await doesFolderExist(directory)
     .catch(() => createFolder(directory))

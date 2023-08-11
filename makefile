@@ -13,14 +13,22 @@ lint:
 	npx eslint __tests__
 	npx eslint ./
 
+DEFAULT=fuga
+echo:
+	@echo $(DEFAULT)
+
 test:
 	npm run test
 
+TIMESTAMP := $(shell /bin/date "+%Y.%m.%d")
+URL=''
 debug-page-loader:
-	DEBUG=page-loader node ./bin/page-loader.js https://ru.hexlet.1io/courses 2>> ./logs/page-loader.log
+	mkdir -p ./logs/page-loader-logs
+	DEBUG=page-loader node ./bin/page-loader.js $(URL) >> logs/page-loader-logs/$(TIMESTAMP).log 2>&1
 
 debug-axios:
-	DEBUG=axios node --require axios-debug-log ./bin/page-loader.js https://ru.hexlet.1io/courses 2>> ./logs/axios.log
+	mkdir -p ./logs/axios-logs
+	DEBUG=axios node --require axios-debug-log ./bin/page-loader.js $(URL) >> logs/axios-logs/$(TIMESTAMP).log 2>&1
 
 test-watch:
 	npm run test-watch
