@@ -9,7 +9,6 @@ install-eslint-packages:
 lint:
 	npx eslint ./bin/
 	npx eslint ./src/
-	npx eslint __fixtures__
 	npx eslint __tests__
 	npx eslint ./
 

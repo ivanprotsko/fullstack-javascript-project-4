@@ -3,11 +3,13 @@ import fsp from 'fs/promises';
 import { createFolder } from '../src/page-loader.js';
 
 const temporaryFolder = os.tmpdir();
-const directory = 'test-directory'
-const fullDirectoryPath = `${temporaryFolder}/${directory}`
+const directory = 'test-directory';
+const fullDirectoryPath = `${temporaryFolder}/${directory}`;
 
-test('Create folder', async () => {
-  expect(await createFolder(fullDirectoryPath))
+test('Create folder', () => {
+  expect(
+    createFolder(fullDirectoryPath),
+  )
     .toEqual('success');
-})
-afterAll(async () => await fsp.rmdir(fullDirectoryPath));
+});
+afterAll(() => fsp.rmdir(fullDirectoryPath));
