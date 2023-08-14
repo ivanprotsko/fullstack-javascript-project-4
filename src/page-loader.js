@@ -4,31 +4,30 @@ import jsdom from 'jsdom';
 import path from 'path';
 
 const handleAxiosError = (error) => {
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      // console.log(error.response.data);
-      console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
-      console.log(`⚠ Error. ${error.response.status}`);
-      // console.log(error.response.headers);
-
-    } else if (error.request) {
-      // The request was made but no response was received
-      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-      // http.ClientRequest in node.js
-      // error.request
-      console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
-    } else {
-      // Something happened in setting up the request that triggered an Error
-      console.log('⚠ Error.', error.message);
-    }
-    // console.log(error.config);
-    process.on('exit', function(code) {
-      console.log(`→ Process exit code: ${code}`);
-      console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
-      process.exit(code);
-    })
-}
+  if (error.response) {
+    // The request was made and the server responded with a status code
+    // that falls out of the range of 2xx
+    // console.log(error.response.data);
+    console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
+    console.log(`⚠ Error. ${error.response.status}`);
+    // console.log(error.response.headers);
+  } else if (error.request) {
+    // The request was made but no response was received
+    // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+    // http.ClientRequest in node.js
+    // error.request
+    console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
+  } else {
+    // Something happened in setting up the request that triggered an Error
+    console.log('⚠ Error.', error.message);
+  }
+  // console.log(error.config);
+  process.on('exit', (code) => {
+    console.log(`→ Process exit code: ${code}`);
+    console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
+    process.exit(code);
+  });
+};
 const config = {
   tags: [
     { tag: 'link', attribute: 'href' },
@@ -50,9 +49,7 @@ export const createFolder = (folderPath) => {
 
 export const doesFolderExist = (folderPath) => fsp.access(folderPath);
 
-export const removeHttp = (url) => {
-  return url.replace(/^https?:\/\//, '');
-}
+export const removeHttp = (url) => url.replace(/^https?:\/\//, '');
 
 export const createName = (url, format) => {
   const pathName = removeHttp(url);
@@ -115,11 +112,9 @@ export const selectAssetElements = (dom, tags, fileFormats) => {
   return elements;
 };
 
-export const getBinaryDataFromUrl = (href) => axios.get(href, {responseType: 'arraybuffer'})
+export const getBinaryDataFromUrl = (href) => axios.get(href, { responseType: 'arraybuffer' })
   .catch(handleAxiosError)
-  .then((response) => {
-    return Buffer.from(response.data, 'binary').toString('binary');
-  });
+  .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
 
 const writeBinaryData = (data, filePath) => fsp.writeFile(filePath, data, 'binary');
 
@@ -156,6 +151,5 @@ export default async (url, directory) => {
       } catch (error) {
         console.log(error);
       }
-    })
-
+    });
 };
