@@ -8,25 +8,24 @@ const handleAxiosError = (error) => {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
     console.log(error.response.data);
-    console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
-    console.log(`⚠ Error. ${error.response.status}`);
+    console.log(error.response.status);
     console.log(error.response.headers);
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
     // http.ClientRequest in node.js
     // error.request
+    console.log(error.request);
     console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
   } else {
     // Something happened in setting up the request that triggered an Error
-    console.log('⚠ Error.', error.message);
+    console.log('Error.', error.message);
   }
-  // console.log(error.config);
-  process.on('exit', (code) => {
-    console.log(`→ Process exit code: ${code}`);
-    console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
-    process.exit(code);
-  });
+  console.log(error.config);
+  // process.on('exit', (code) => {
+  //   console.log(`→ Process exit code: ${code}`);
+  //   process.exit(code);
+  // });
 };
 const config = {
   tags: [
@@ -113,7 +112,7 @@ export const selectAssetElements = (dom, tags, fileFormats) => {
 };
 
 export const getBinaryDataFromUrl = (href) => axios.get(href, { responseType: 'arraybuffer' })
-  // .catch(handleAxiosError)
+  .catch(handleAxiosError)
   .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
 
 const writeBinaryData = (data, filePath) => fsp.writeFile(filePath, data, 'binary');
@@ -132,7 +131,7 @@ export default async (url, directory) => {
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
     .then(() => axios.get(url))
-    // .catch(handleAxiosError)
+    .catch(handleAxiosError)
     .then((response) => new jsdom.JSDOM(response.data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
