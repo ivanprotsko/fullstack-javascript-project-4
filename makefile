@@ -1,3 +1,5 @@
+
+
 install:
 	npm ci
 
@@ -15,14 +17,13 @@ lint:
 test:
 	npm run test
 
-
-SCOPE='debug-scope'
-PATH='__tests__/some.test.js'
-URL='your-url.com'
+SCOPE=''
+FILEPATH=''
+URL=''
 TIMESTAMP := $(shell /bin/date "+%Y.%m.%d")
 debug-page-loader:
 	mkdir -p ./logs/page-loader-logs
-	DEBUG=page-loader node ./bin/page-loader.js ${URL} >> logs/page-loader-logs/$(TIMESTAMP).log 2>&1
+	DEBUG=page-loader node ./bin/page-loader.js $(URL) >> logs/page-loader-logs/$(TIMESTAMP).log 2>&1
 
 debug-axios:
 	mkdir -p ./logs/axios-logs
@@ -30,7 +31,7 @@ debug-axios:
 
 debug-nock:
 	mkdir -p ./logs/nock-logs
-	DEBUG=nock.scope:$(SCOPE) NODE_OPTIONS=--experimental-vm-modules npx jest $(PATH) >> logs/nock-logs/$(TIMESTAMP) 2>&1
+	DEBUG=nock.scope:$(SCOPE) NODE_OPTIONS=--experimental-vm-modules npx jest $(FILEPATH) >> logs/nock-logs/$(TIMESTAMP) 2>&1
 
 test-watch:
 	npm run test-watch

@@ -1,6 +1,8 @@
 import nock from 'nock';
 import axios from "axios";
 import { getBinaryDataFromUrl } from '../src/page-loader.js';
+import fsp from "fs/promises";
+import path from "path";
 
 test('Get data from URL', async () => {
   const scope = nock('https://ru.hexlet.io')
@@ -9,7 +11,7 @@ test('Get data from URL', async () => {
   try {
     await expect(
       getBinaryDataFromUrl('https://ru.hexlet.io/courses'),
-    ).resolves.toBe('dat1a');
+    ).resolves.toBe('data');
   } catch (e) {
    console.error(e);
   }

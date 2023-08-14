@@ -50,20 +50,22 @@ export const createFolder = (folderPath) => {
 
 export const doesFolderExist = (folderPath) => fsp.access(folderPath);
 
+export const removeHttp = (url) => {
+  return url.replace(/^https?:\/\//, '');
+}
+
 export const createName = (url, format) => {
-  console.log(url);
-  const link = new URL(url);
-  const name = [link.host, link.pathname]
-    .join('')
-    .split(`.${format}`)
-    .join('')
+  const pathName = removeHttp(url);
+  const { dir, name } = path.parse(pathName);
+  const formattedName = [dir, name]
+    .join('-')
     .split('.')
     .join('-')
     .split('/')
     .join('-');
 
   const separator = (format === 'files') ? '_' : '.';
-  return [name, format].join(separator);
+  return [formattedName, format].join(separator);
 };
 
 export const getFileFormat = (filePath) => {
@@ -134,8 +136,9 @@ export default async (url, directory) => {
     .catch(() => createFolder(directory))
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
-    .then(() => getBinaryDataFromUrl(url))
-    .then((data) => new jsdom.JSDOM(data))
+    .then(() => axios.get(url))
+    .catch(handleAxiosError)
+    .then((response) => new jsdom.JSDOM(response.data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
       downloadAssetElements(elementObjects, assetsFolderPath);
