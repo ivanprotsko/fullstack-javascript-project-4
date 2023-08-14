@@ -7,21 +7,22 @@ const handleAxiosError = async (error) => {
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx
-    await console.log(error.response.data);
-    await console.log(error.response.status);
-    await console.log(error.response.headers);
+    console.log(error.response.data);
+    console.log(error.response.status);
+    console.log(error.response.headers);
   } else if (error.request) {
     // The request was made but no response was received
     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
     // http.ClientRequest in node.js
     // error.request
-    await console.log(error.request);
-    await console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
+    console.log(error.request);
+    console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
   } else {
     // Something happened in setting up the request that triggered an Error
-    await console.log('Error.', error.message);
+    console.log('Error.', error.message);
   }
-  await console.log(error.config);
+  console.log(error.config);
+  return error;
   // process.on('exit', (code) => {
   //   console.log(`→ Process exit code: ${code}`);
   //   process.exit(code);
