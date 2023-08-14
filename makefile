@@ -12,22 +12,25 @@ lint:
 	npx eslint __tests__
 	npx eslint ./
 
-DEFAULT=fuga
-echo:
-	@echo $(DEFAULT)
-
 test:
 	npm run test
 
+
+SCOPE='debug-scope'
+PATH='__tests__/some.test.js'
+URL='your-url.com'
 TIMESTAMP := $(shell /bin/date "+%Y.%m.%d")
-URL=''
 debug-page-loader:
 	mkdir -p ./logs/page-loader-logs
-	DEBUG=page-loader node ./bin/page-loader.js $(URL) >> logs/page-loader-logs/$(TIMESTAMP).log 2>&1
+	DEBUG=page-loader node ./bin/page-loader.js ${URL} >> logs/page-loader-logs/$(TIMESTAMP).log 2>&1
 
 debug-axios:
 	mkdir -p ./logs/axios-logs
 	DEBUG=axios node --require axios-debug-log ./bin/page-loader.js $(URL) >> logs/axios-logs/$(TIMESTAMP).log 2>&1
+
+debug-nock:
+	mkdir -p ./logs/nock-logs
+	DEBUG=nock.scope:$(SCOPE) NODE_OPTIONS=--experimental-vm-modules npx jest $(PATH) >> logs/nock-logs/$(TIMESTAMP) 2>&1
 
 test-watch:
 	npm run test-watch

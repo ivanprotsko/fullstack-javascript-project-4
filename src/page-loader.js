@@ -3,6 +3,32 @@ import fsp from 'fs/promises';
 import jsdom from 'jsdom';
 import path from 'path';
 
+const handleAxiosError = (error) => {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      // console.log(error.response.data);
+      console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
+      console.log(`⚠ Error. ${error.response.status}`);
+      // console.log(error.response.headers);
+
+    } else if (error.request) {
+      // The request was made but no response was received
+      // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+      // http.ClientRequest in node.js
+      // error.request
+      console.log('⚠ Error. Check your internet connection. The request was made but no response was received.');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.log('⚠ Error.', error.message);
+    }
+    // console.log(error.config);
+    process.on('exit', function(code) {
+      console.log(`→ Process exit code: ${code}`);
+      console.log('-/-/-/-/-/-/-/-/-/-/-/-/-/-/');
+      process.exit(code);
+    })
+}
 const config = {
   tags: [
     { tag: 'link', attribute: 'href' },
@@ -25,6 +51,7 @@ export const createFolder = (folderPath) => {
 export const doesFolderExist = (folderPath) => fsp.access(folderPath);
 
 export const createName = (url, format) => {
+  console.log(url);
   const link = new URL(url);
   const name = [link.host, link.pathname]
     .join('')
@@ -86,8 +113,11 @@ export const selectAssetElements = (dom, tags, fileFormats) => {
   return elements;
 };
 
-export const getBinaryDataFromUrl = (href) => axios.get(href, { responseType: 'arraybuffer' })
-  .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
+export const getBinaryDataFromUrl = (href) => axios.get(href, {responseType: 'arraybuffer'})
+  .catch(handleAxiosError)
+  .then((response) => {
+    return Buffer.from(response.data, 'binary').toString('binary');
+  });
 
 const writeBinaryData = (data, filePath) => fsp.writeFile(filePath, data, 'binary');
 
@@ -100,17 +130,12 @@ export default async (url, directory) => {
   const assetsFolderPath = `${directory}/${createName(url, 'files')}`;
   const { tags, fileFormats } = config;
 
-  // var github = axios.create({ baseURL: 'https://api.github.com/' })
-  // var githubLogger = require('debug')('github')
-  // debug()
-  // axiosDebugLog.addLogger(github, githubLogger)
-
   await doesFolderExist(directory)
     .catch(() => createFolder(directory))
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
-    .then(() => axios.get(url))
-    .then((response) => new jsdom.JSDOM(response.data))
+    .then(() => getBinaryDataFromUrl(url))
+    .then((data) => new jsdom.JSDOM(data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
       downloadAssetElements(elementObjects, assetsFolderPath);
@@ -128,5 +153,6 @@ export default async (url, directory) => {
       } catch (error) {
         console.log(error);
       }
-    });
+    })
+
 };

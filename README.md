@@ -6,3 +6,11 @@
 
 ### Test Coverage Badge
 [![Test Coverage](https://api.codeclimate.com/v1/badges/f04a404eeb6a7660629f/test_coverage/)](https://codeclimate.com/github/ivanprotsko/fullstack-javascript-project-4/test_coverage)
+
+### Debug
+#### Commands
+- **make debug-page-loader**
+- **make debug-axios**
+- make debug-nock
+#### Logs folder 
+See log files inside "logs" folder.
