@@ -131,6 +131,10 @@ export default async (url, directory) => {
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
     .then(() => axios.get(url))
+    .catch((e) => {
+      handleAxiosError(e);
+      throw e;
+    })
     .then((response) => new jsdom.JSDOM(response.data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
@@ -149,6 +153,5 @@ export default async (url, directory) => {
       } catch (error) {
         console.log(error);
       }
-    })
-    .catch(handleAxiosError);
+    });
 };
