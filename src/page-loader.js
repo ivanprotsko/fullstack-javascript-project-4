@@ -112,7 +112,7 @@ export const selectAssetElements = (dom, tags, fileFormats) => {
 };
 
 export const getBinaryDataFromUrl = (href) => axios.get(href, { responseType: 'arraybuffer' })
-  .catch(handleAxiosError)
+  // .catch(handleAxiosError)
   .then((response) => Buffer.from(response.data, 'binary').toString('binary'));
 
 const writeBinaryData = (data, filePath) => fsp.writeFile(filePath, data, 'binary');
@@ -131,10 +131,10 @@ export default async (url, directory) => {
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
     .then(() => axios.get(url))
-    .catch((e) => {
-      handleAxiosError(e);
-      throw e;
-    })
+    // .catch((e) => {
+    //   handleAxiosError(e);
+    //   throw e;
+    // })
     .then((response) => new jsdom.JSDOM(response.data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
@@ -143,15 +143,11 @@ export default async (url, directory) => {
       const finalHtml = dom.window.document.documentElement.innerHTML;
       return finalHtml;
     })
-    .then((finalHtml) => {
-      try {
-        fsp.writeFile(
-          `${directory}/${createName(url, 'html')}`,
-          finalHtml,
-          { encoding: 'utf8' },
-        );
-      } catch (error) {
-        console.log(error);
-      }
-    });
+    .then((finalHtml) => fsp.writeFile(
+      `${directory}/${createName(url, 'html')}`,
+      finalHtml,
+      { encoding: 'utf8' },
+      )
+    )
+    .catch(console.error);
 };
