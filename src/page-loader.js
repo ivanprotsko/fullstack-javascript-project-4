@@ -22,7 +22,6 @@ const handleAxiosError = async (error) => {
     console.log('Error.', error.message);
   }
   console.log(error.config);
-  return error;
   // process.on('exit', (code) => {
   //   console.log(`→ Process exit code: ${code}`);
   //   process.exit(code);
@@ -132,7 +131,6 @@ export default async (url, directory) => {
     .then(() => doesFolderExist(assetsFolderPath))
     .catch(() => createFolder(assetsFolderPath))
     .then(() => axios.get(url))
-    .catch(handleAxiosError)
     .then((response) => new jsdom.JSDOM(response.data))
     .then((dom) => {
       const elementObjects = selectAssetElements(dom, tags, fileFormats);
@@ -151,5 +149,6 @@ export default async (url, directory) => {
       } catch (error) {
         console.log(error);
       }
-    });
+    })
+    .catch(handleAxiosError);
 };
