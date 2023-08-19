@@ -12,7 +12,7 @@ const fullPath = `${temporaryFolder}/${directory}`;
 
 describe('Test of createFolder function', () => {
   test('Folder exists', async () => {
-    const existingFolder = '/Users/ivanprotska/Documents/Apps/fullstack-javascript-project-4/__fixtures__/existing-folder';
+    const existingFolder = os.tmpdir();
     const result = await doesFolderExist(existingFolder);
 
     await expect(result).toBe('folder-exists');
