@@ -3,13 +3,14 @@ import { Command } from 'commander';
 
 const metaData = JSON.parse(readFileSync('./package.json'));
 const program = new Command();
+const currentDir = process.cwd();
 
 program
   .name('page-loader')
-  .description('The util downloads webpage.\n')
+  .description('Page loader utility')
   .version(metaData.version);
 program
-  .option('-o, --output <directory>', 'output dir', 'tmp')
+  .option('-o, --output <directory>', 'output dir', currentDir)
   .argument('<URL>', 'webpage URL to download');
 program
   .parse();
