@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import getFileName from '../src/utils/get-name/get-file-name';
+import getFileName from '../src/utils/get-name/get-file-name.js';
 import getFolderName from '../src/utils/get-name/get-folder-name';
 
 describe('Test of getName function', () => {
@@ -9,7 +9,7 @@ describe('Test of getName function', () => {
   });
 
   test('Get assets folder name', () => {
-    expect(getFolderName('https://ru.hexlet.io/courses', 'files', '_'))
+    expect(getFolderName('https://ru.hexlet.io/courses', '_files'))
       .toEqual('ru-hexlet-io-courses_files');
   });
 });

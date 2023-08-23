@@ -6,7 +6,7 @@ import {
 } from '@jest/globals';
 import writeHtmlPage from '../src/utils/get-file/write-html-page';
 import downloadHtmlPage from '../src/utils/get-file/download-html-page';
-import getFileName from '../src/utils/get-name/get-file-name';
+import getFileName from '../src/utils/get-name/get-file-name.js';
 
 const url = 'https://subdomain.domain.io/pagename';
 const fileName = getFileName(url, 'html');

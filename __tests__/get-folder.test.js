@@ -17,6 +17,7 @@ describe('Test of createFolder function', () => {
 
     await expect(result).toBe('folder-exists');
   });
+
   test('Folder not exists', async () => {
     await expect(doesFolderExist(fullPath).catch((e) => e.toString()))
       .resolves.toMatch(`Error: ENOENT: no such file or directory, access '${fullPath}'`);
