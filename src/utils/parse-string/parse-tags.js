@@ -4,8 +4,3 @@ export default (html, tags) => {
   const match = html.match(regexp);
   return match !== undefined ? match : null;
 };
-// export default (html) => html.match(/(<a|<img|<script|<link).*?>/g);
-
-// вытянуть все src
-// вытянуть все href
-// вытянуть rel

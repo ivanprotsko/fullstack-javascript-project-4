@@ -6,14 +6,16 @@ import parseUrlParams from '../parse-string/parse-url-params.js';
 import getFinalUrlPath from '../get-path/get-final-url-path.js';
 import parseTagName from '../parse-string/parse-tag-name.js';
 
-export default (tag, targetUrl) => {
+export default (tag, targetUrl, downloadType) => {
   const o = {};
   o.tagName = parseTagName(tag);
   o.linkRel = parseAttributeValue(tag, 'rel');
   o.targetUrl = targetUrl;
   o.targetHost = new URL(targetUrl).host;
+  o.targetDomain = '';
+  o.urlDomain = '';
   o.urlInitial = parseLinkValue(tag);
-  o.urlHost = getUrlHost(o, targetUrl);
+  o.urlHost = getUrlHost(o, targetUrl, downloadType);
   o.urlType = getUrlType(o);
   o.urlParams = parseUrlParams(o, targetUrl);
   o.urlFinal = getFinalUrlPath(o);
