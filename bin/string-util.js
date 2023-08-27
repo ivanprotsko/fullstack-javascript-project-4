@@ -1,8 +1,7 @@
-import { readFileSync } from 'fs';
 import { Command } from 'commander';
 import fsp from 'fs/promises';
 
-const json = await fsp.readFile('./package.json');
+const json = fsp.readFile('./package.json');
 
 const metaData = JSON.parse(json.toString());
 
