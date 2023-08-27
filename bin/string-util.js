@@ -1,7 +1,11 @@
 import { readFileSync } from 'fs';
 import { Command } from 'commander';
+import fsp from 'fs/promises';
 
-const metaData = JSON.parse(readFileSync('./package.json'));
+const json = await fsp.readFile('./package.json');
+
+const metaData = JSON.parse(json.toString());
+
 const program = new Command();
 const currentDir = process.cwd();
 const downloadOptionDescription = '\'domain\' setting downloads all assets, include assets placed on subdomains of the domain, \'host\' downloads only assets placed at its host.';
