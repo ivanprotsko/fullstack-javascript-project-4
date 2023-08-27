@@ -32,21 +32,19 @@ export const urlToFilename = (slug) => {
   return [fileName, '.html'].join('');
 };
 
-export const urlToDirname = (slug) => {
-  return [formatPath(slug), '_files'].join('');
-};
+export const urlToDirname = (slug) => [formatPath(slug), '_files'].join('');
 
 const formatPathExtension = (pathName) => {
   if (!pathName) return null;
   return pathName.replace(/\?.*$/g, '');
-} // delete all symbols after '?' in extension
+}; // delete all symbols after '?' in extension
 const parseFileFormat = (pathName) => {
   if (!pathName) return null;
   const formattedPath = formatPathExtension(pathName).split('.');
   const lastElement = formattedPath.length - 1;
   const ext = formattedPath[lastElement];
   return ext === undefined ? null : ext;
-}
+};
 
 const isAssetFile = (value, urlHost) => {
   if (!value) return null;
@@ -64,10 +62,8 @@ const isAssetFile = (value, urlHost) => {
     return true;
   }
   return false;
-}
-export const urlToFilenamePrefix = (url) => {
-  return formatPath(url);
-}
+};
+export const urlToFilenamePrefix = (url) => formatPath(url);
 
 export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
@@ -98,19 +94,19 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
         pathname = value;
       }
 
-      const { dir, base } = path.parse(pathname)
+      const { dir, base } = path.parse(pathname);
       const filenamePrefix = formatPath(urlHost);
       const filename = [
         filenamePrefix,
         formatPath(dir),
-        formatPathExtension(base)
-      ].join('-')
+        formatPathExtension(base),
+      ].join('-');
 
       const asset = {
         url: path.join(urlOrigin, formatPathExtension(pathname)),
         filename,
-      }
-      asset.filePath =  [assetsDirname, '/', asset.filename].join('');
+      };
+      asset.filePath = [assetsDirname, '/', asset.filename].join('');
       // Replace html asset link value
       $(tag).attr(attr, asset.filePath);
 
@@ -120,18 +116,16 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   console.log(assets);
   const data = {
     html: $.html(),
-    assets: assets
+    assets,
   };
   return data;
-}
-export const downloadAsset = (dirname, asset) => {
-  return axios.get(asset.url, {responseType: 'arraybuffer'})
-    .then((response) => Buffer.from(response.data, 'binary').toString('binary'))
-    .then((data) => {
-      const filePath = ['/', dirname, '/', asset.filename].join('');
-      return fsp.writeFile(filePath, data, 'binary');
-    });
-}
+};
+export const downloadAsset = (dirname, asset) => axios.get(asset.url, { responseType: 'arraybuffer' })
+  .then((response) => Buffer.from(response.data, 'binary').toString('binary'))
+  .then((data) => {
+    const filePath = ['/', dirname, '/', asset.filename].join('');
+    return fsp.writeFile(filePath, data, 'binary');
+  });
 
 export default (pageUrl, outputDirname = '') => {
   const url = new URL(pageUrl);
@@ -147,33 +141,43 @@ export default (pageUrl, outputDirname = '') => {
   let data;
   const promise = axios.get(pageUrl)
     .then((response) => {
-      data = prepareAssets(response.data, url.hostname, url.origin, assetsDirname); // функция, которая парсит html
+      data = prepareAssets(
+        response.data,
+        url.hostname,
+        url.origin,
+        assetsDirname,
+      ); // функция, которая парсит html
       log('create (if not exists) directory for assets', fullOutputAssetsDirname);
     })
     .then(() => fsp.access(fullOutputDirname))
     .catch(() => fsp.mkdir(fullOutputDirname))
     .then(() => {
       log('write html file', fullOutputFilename);
-      return fsp.writeFile(fullOutputFilename, data.html)
+      return fsp.writeFile(fullOutputFilename, data.html);
     })
     .then(() => fsp.access(fullOutputAssetsDirname))
     .catch(() => fsp.mkdir(fullOutputAssetsDirname))
     .then(() => {
       data.assets
         .map((asset) => downloadAsset(fullOutputAssetsDirname, asset)
-        .catch(_.noop));
+          .catch(_.noop));
 
       const tasks = data.assets.map((asset) => {
         console.log(asset.url);
         log('asset', asset.url, asset.filename);
         return {
           title: asset.url,
-          task: () => downloadAsset(fullOutputAssetsDirname, asset).catch(_.noop), // функция загрузки и записи конкретного ресурса
+          task: () => downloadAsset(
+            fullOutputAssetsDirname,
+            asset,
+          ).catch(_.noop), // функция загрузки и записи конкретного ресурса
         };
       });
       const listr = new Listr(tasks, { concurrent: true });
       return listr.run();
     });
 
-  return promise; // Возвращаем из функции промис, чтобы можно было отслеживать состояние в вызывающем коде.
+  // Возвращаем из функции промис,
+  // чтобы можно было отслеживать состояние в вызывающем коде.
+  return promise;
 };

@@ -14,6 +14,12 @@ lint:
 	npx eslint __tests__
 	npx eslint ./
 
+lint-fix:
+	npx eslint --fix ./bin/
+	npx eslint --fix ./src/
+	npx eslint --fix __tests__
+	npx eslint --fix ./
+
 test:
 	npm run test
 
