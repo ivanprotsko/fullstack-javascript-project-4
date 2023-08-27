@@ -1,17 +1,15 @@
+import { prepareAssets } from "../src/page-loader.js";
 import fsp from 'fs/promises';
-import { describe, test, expect } from '@jest/globals';
-import replaceLinks from '../src/utils/replace-links.js';
-import extractLinksFromHtml from '../src/utils/generate-structure/extract-links-from-html.js';
+import prettify from 'html-prettify';
 
-describe('Test of pageLoaderApp function', () => {
-  test('Success case', async () => {
-    const url = 'https://ru.hexlet.io/courses';
-    const searchedTags = ['script', 'a', 'link', 'img'];
-    const initial = await fsp.readFile(`${process.cwd()}/__fixtures__/initial.html`, 'utf8');
-    const final = await fsp.readFile(`${process.cwd()}/__fixtures__/final.html`, 'utf8');
-    const assetFileLinks = extractLinksFromHtml(initial, searchedTags, url, 'host');
+test('Replace links', async () => {
+  const { hostname, origin } = new URL('https://ru.hexlet.io/courses');
+  const assetsDirname = 'ru-hexlet-io-courses_files';
 
-    const processedHtml = replaceLinks(initial, assetFileLinks);
-    expect(processedHtml).toBe(final);
-  });
+  const finalHtml = await fsp.readFile(`${process.cwd()}/__fixtures__/final.html`, 'utf8');
+  const initialHtml = await fsp.readFile(`${process.cwd()}/__fixtures__/initial.html`, 'utf8');
+  const { html } = prepareAssets(initialHtml, hostname, origin,assetsDirname);
+
+  expect(prettify(html))
+    .toBe(prettify(finalHtml));
 });

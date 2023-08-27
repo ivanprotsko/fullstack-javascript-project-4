@@ -1,41 +1,179 @@
-import doesFolderExist from './utils/get-folder/does-folder-exist.js';
-import createFolder from './utils/get-folder/create-folder.js';
-import getFileName from './utils/get-name/get-file-name.js';
-import getFilePath from './utils/get-path/get-file-path.js';
-import writeHtmlPage from './utils/get-file/write-html-page.js';
-import replaceLinks from './utils/replace-links.js';
-import downloadAssetsElements from './utils/get-file/download-assets-elements.js';
-import extractLinksFromHtml from './utils/generate-structure/extract-links-from-html.js';
-import getFolderName from './utils/get-name/get-folder-name.js';
-import getHtmlDataFromUrl from './utils/get-data/get-html-from-url.js';
+import path from 'path';
+import debug from 'debug';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+import fsp from 'fs/promises';
+import Listr from 'listr';
+import _ from 'lodash';
 
-export default (url, directory, downloadType) => {
-  const fileName = getFileName(url, 'html');
-  const filePath = getFilePath(directory, fileName);
-  const assetFolderPath = `${directory}/${getFolderName(url, '_files')}`;
+const log = debug('page-loader');
+export const getPathName = (link) => {
+  let pathName;
+
+  try {
+    const { pathname } = new URL(link);
+    pathName = pathname;
+  } catch (e) {
+    pathName = link;
+  }
+
+  return pathName;
+};
+export const formatPath = (pathname) => pathname
+  .replace(/^www\./, '')
+  .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
+  .replace(/\/$/, '') // removes the last symbol '/' (example: /some-folder/some-page/ ← the target '/')
+  .replace(/^\//g, '') // removes the first (root) symbol '/' if it exists;
+  .replace(/\.|\//g, '-') // changes symbols '/' & '.' to '-';
+  .replace(/[:/?#[\]@+=&]/g, '-'); //  replace other symbols: [':', '?', '#', '[', ']', '@', '=', '+', '&'];
+
+export const urlToFilename = (slug) => {
+  const fileName = formatPath(slug);
+  return [fileName, '.html'].join('');
+};
+
+export const urlToDirname = (slug) => {
+  return [formatPath(slug), '_files'].join('');
+};
+
+const formatPathExtension = (pathName) => {
+  if (!pathName) return null;
+  return pathName.replace(/\?.*$/g, '');
+} // delete all symbols after '?' in extension
+const parseFileFormat = (pathName) => {
+  if (!pathName) return null;
+  const formattedPath = formatPathExtension(pathName).split('.');
+  const lastElement = formattedPath.length - 1;
+  const ext = formattedPath[lastElement];
+  return ext === undefined ? null : ext;
+}
+
+const isAssetFile = (value, urlHost) => {
+  if (!value) return null;
+  let pathname;
+  try {
+    const valueUrl = new URL(value);
+    if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
+  } catch (e) {
+    pathname = value;
+  }
+
+  const ext = parseFileFormat(pathname);
+  const formats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf'];
+  if (formats.join(' ').includes(ext)) {
+    return true;
+  }
+  return false;
+}
+export const urlToFilenamePrefix = (url) => {
+  return formatPath(url);
+}
+
+export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
+  const preparedHTML = html.toString();
+  // Select all tags from the html
+  const $ = cheerio.load(preparedHTML);
   const searchedTags = ['a', 'img', 'link', 'script'];
 
-  return doesFolderExist(directory)
-    .catch(() => createFolder(directory))
-    .then(() => doesFolderExist(assetFolderPath))
-    .catch(() => createFolder(assetFolderPath))
-    // download html page
-    .then(() => getHtmlDataFromUrl(url))
-    .then((data) => writeHtmlPage(data, filePath))
-    // download images
-    .then((html) => {
-      const assetFileLinks = extractLinksFromHtml(html, searchedTags, url, downloadType);
-      const updatedHtml = replaceLinks(html, assetFileLinks);
-      writeHtmlPage(updatedHtml, filePath);
-      return assetFileLinks;
+  // вытянуть все теги со ссылками
+  const selectedTags = searchedTags
+    .map((tag) => $(tag).toArray())
+    .flat();
+
+  const assets = selectedTags
+    .filter((tag) => {
+      const attr = $(tag).attr('src') ? 'src' : 'href';
+      const value = $(tag).attr(attr);
+      return isAssetFile(value, urlHost);
     })
-    .then((links) => {
-      const assetFilesLinks = links.filter((link) => {
-        const {
-          urlParams: { ext }, urlType, urlHost, targetHost,
-        } = link;
-        return (ext !== null && urlType === 'asset-file' && (urlHost === targetHost || urlHost === 'localhost'));
-      });
-      downloadAssetsElements(assetFilesLinks, directory);
+    .map((tag) => {
+      const attr = $(tag).attr('src') ? 'src' : 'href';
+      const value = $(tag).attr(attr);
+
+      let pathname;
+      try {
+        const valueUrl = new URL(value);
+        if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
+      } catch (e) {
+        pathname = value;
+      }
+
+      const { dir, base } = path.parse(pathname)
+      const filenamePrefix = formatPath(urlHost);
+      const filename = [
+        filenamePrefix,
+        formatPath(dir),
+        formatPathExtension(base)
+      ].join('-')
+
+      const asset = {
+        url: path.join(urlOrigin, formatPathExtension(pathname)),
+        filename,
+      }
+      asset.filePath =  [assetsDirname, '/', asset.filename].join('');
+      // Replace html asset link value
+      $(tag).attr(attr, asset.filePath);
+
+      return asset;
     });
+
+  console.log(assets);
+  const data = {
+    html: $.html(),
+    assets: assets
+  };
+  return data;
+}
+export const downloadAsset = (dirname, asset) => {
+  return axios.get(asset.url, {responseType: 'arraybuffer'})
+    .then((response) => Buffer.from(response.data, 'binary').toString('binary'))
+    .then((data) => {
+      const filePath = ['/', dirname, '/', asset.filename].join('');
+      return fsp.writeFile(filePath, data, 'binary');
+    });
+}
+
+export default (pageUrl, outputDirname = '') => {
+  const url = new URL(pageUrl);
+  const slug = `${url.hostname}${url.pathname}`;
+
+  const filename = urlToFilename(slug); // преобзразовывем имя в нужный формат
+  const assetsDirname = urlToDirname(slug);
+
+  const fullOutputDirname = path.resolve(process.cwd(), outputDirname);
+  const fullOutputFilename = path.join(fullOutputDirname, filename);
+  const fullOutputAssetsDirname = path.join(fullOutputDirname, assetsDirname);
+
+  let data;
+  const promise = axios.get(pageUrl)
+    .then((response) => {
+      data = prepareAssets(response.data, url.hostname, url.origin, assetsDirname); // функция, которая парсит html
+      log('create (if not exists) directory for assets', fullOutputAssetsDirname);
+    })
+    .then(() => fsp.access(fullOutputDirname))
+    .catch(() => fsp.mkdir(fullOutputDirname))
+    .then(() => {
+      log('write html file', fullOutputFilename);
+      return fsp.writeFile(fullOutputFilename, data.html)
+    })
+    .then(() => fsp.access(fullOutputAssetsDirname))
+    .catch(() => fsp.mkdir(fullOutputAssetsDirname))
+    .then(() => {
+      data.assets
+        .map((asset) => downloadAsset(fullOutputAssetsDirname, asset)
+        .catch(_.noop));
+
+      const tasks = data.assets.map((asset) => {
+        console.log(asset.url);
+        log('asset', asset.url, asset.filename);
+        return {
+          title: asset.url,
+          task: () => downloadAsset(fullOutputAssetsDirname, asset).catch(_.noop), // функция загрузки и записи конкретного ресурса
+        };
+      });
+      const listr = new Listr(tasks, { concurrent: true });
+      return listr.run();
+    });
+
+  return promise; // Возвращаем из функции промис, чтобы можно было отслеживать состояние в вызывающем коде.
 };
