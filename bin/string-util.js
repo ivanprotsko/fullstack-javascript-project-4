@@ -5,7 +5,7 @@ const metaData = JSON.parse(readFileSync('./package.json', 'utf8'));
 
 const program = new Command();
 const currentDir = process.cwd();
-const downloadOptionDescription = `\'domain\' setting downloads all assets, include assets placed on subdomains of the domain, \'host\' downloads only assets placed at its host.`;
+const downloadOptionDescription = '\'domain\' setting downloads all assets, include assets placed on subdomains of the domain, \'host\' downloads only assets placed at its host.';
 program
   .name('page-loader')
   .description('Page loader utility')
