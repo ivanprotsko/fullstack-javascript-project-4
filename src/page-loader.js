@@ -67,11 +67,10 @@ export const urlToFilenamePrefix = (url) => formatPath(url);
 
 export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
-  // Select all tags from the html
   const $ = cheerio.load(preparedHTML);
-  const searchedTags = ['a', 'img', 'link', 'script'];
 
   // вытянуть все теги со ссылками
+  const searchedTags = ['a', 'img', 'link', 'script'];
   const selectedTags = searchedTags
     .map((tag) => $(tag).toArray())
     .flat();
@@ -80,11 +79,19 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
     .filter((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
       const value = $(tag).attr(attr);
-      return isAssetFile(value, urlHost);
+
+      const isCanonical = $(tag).attr('rel') === 'canonical';
+
+      return isAssetFile(value, urlHost) || isCanonical;
     })
     .map((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
       const value = $(tag).attr(attr);
+
+      const isCanonical = $(tag).attr('rel') === 'canonical';
+
+      const filenamePrefix = formatPath(urlHost);
+      let filename;
 
       let pathname;
       try {
@@ -94,13 +101,16 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
         pathname = value;
       }
 
-      const { dir, base } = path.parse(pathname);
-      const filenamePrefix = formatPath(urlHost);
-      const filename = [
-        filenamePrefix,
-        formatPath(dir),
-        formatPathExtension(base),
-      ].join('-');
+      if (isCanonical) {
+        filename = [filenamePrefix, '-', formatPath(pathname), '.html'].join('');
+      } else {
+        const { dir, base } = path.parse(pathname);
+        filename = [
+          filenamePrefix,
+          formatPath(dir),
+          formatPathExtension(base),
+        ].join('-');
+      }
 
       const asset = {
         url: path.join(urlOrigin, formatPathExtension(pathname)),
@@ -113,7 +123,6 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
       return asset;
     });
 
-  console.log(assets);
   const data = {
     html: $.html(),
     assets,
