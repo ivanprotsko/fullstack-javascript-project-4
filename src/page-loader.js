@@ -40,7 +40,8 @@ const parseFileFormat = (pathName) => {
 const getUrlParams = (value) => {
   if (!value) return null;
 
-  let pathname, host;
+  let pathname; let
+    host;
   try {
     const valueUrl = new URL(value);
     pathname = valueUrl.pathname;
@@ -50,13 +51,14 @@ const getUrlParams = (value) => {
     host = '/';
   }
   const ext = parseFileFormat(pathname);
-  const urlParams = { 
-    host, 
-    pathname: clearExtensionParams(pathname), 
-    ext };
+  const urlParams = {
+    host,
+    pathname: clearExtensionParams(pathname),
+    ext,
+  };
 
   return urlParams;
-}
+};
 
 const getAssetFileName = (pathname, prefix, isCanonical = false) => {
   let filename;
@@ -71,7 +73,7 @@ const getAssetFileName = (pathname, prefix, isCanonical = false) => {
     ].join('-');
   }
   return filename;
-}
+};
 
 export const prepareAssets = (html, pageUrlHost, pageUrlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
@@ -99,7 +101,7 @@ export const prepareAssets = (html, pageUrlHost, pageUrlOrigin, assetsDirname) =
     .map((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
       const value = $(tag).attr(attr);
-      const { pathname, host } = getUrlParams(value);
+      const { pathname } = getUrlParams(value);
 
       const isCanonical = $(tag).attr('rel') === 'canonical';
       const filenamePrefix = formatPath(pageUrlHost);
