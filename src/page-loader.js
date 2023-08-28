@@ -48,24 +48,6 @@ const parseFileFormat = (pathName) => {
   return ext === undefined ? null : ext;
 };
 
-const isAssetFile = (value, urlHost) => {
-  if (!value) return null;
-  let pathname;
-  try {
-    const valueUrl = new URL(value);
-    if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
-  } catch (e) {
-    pathname = value;
-  }
-
-  const ext = parseFileFormat(pathname);
-  const formats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf'];
-  if (formats.join(' ').includes(ext)) {
-    return true;
-  }
-  return false;
-};
-
 const getAssetFileName = (pathname, prefix, isCanonical = false) => {
   let filename;
   if (isCanonical) {
@@ -79,12 +61,13 @@ const getAssetFileName = (pathname, prefix, isCanonical = false) => {
     ].join('-');
   }
   return filename;
-}
+};
 
 const getUrlParams = (value) => {
   if (!value) return null;
 
-  let pathname, host;
+  let pathname; let
+    host;
   try {
     const valueUrl = new URL(value);
     pathname = valueUrl.pathname;
@@ -96,7 +79,7 @@ const getUrlParams = (value) => {
   const ext = parseFileFormat(pathname);
 
   return { host, pathname: formatPathExtension(pathname), ext: formatPathExtension(ext) };
-}
+};
 
 export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
