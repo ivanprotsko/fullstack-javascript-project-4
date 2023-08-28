@@ -8,7 +8,6 @@ import _ from 'lodash';
 
 const log = debug('page-loader');
 
-const assetFileFormats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf', 'otf', 'webp'];
 export const formatPath = (pathname) => pathname
   .replace(/^www\./, '') // removes 'www.' from the beginning of a string
   .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
@@ -40,8 +39,7 @@ const parseFileFormat = (pathName) => {
 const getUrlParams = (value) => {
   if (!value) return null;
 
-  let pathname; let
-    host;
+  let pathname, host;
   try {
     const valueUrl = new URL(value);
     pathname = valueUrl.pathname;
@@ -51,13 +49,28 @@ const getUrlParams = (value) => {
     host = '/';
   }
   const ext = parseFileFormat(pathname);
-  const urlParams = {
-    host,
-    pathname: clearExtensionParams(pathname),
-    ext,
-  };
 
-  return urlParams;
+  return { host, pathname, ext };
+}
+const getPathName = (link, urlHost) => {
+  if (!link) return null;
+  let pathname;
+  try {
+    const valueUrl = new URL(link);
+    if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
+  } catch (e) {
+    pathname = link;
+  }
+  return pathname;
+}
+const isAssetFile = (ext, urlHost) => {
+  // const pathname = getPathName(value, urlHost);
+  // const ext = parseFileFormat(pathname);
+  const formats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf', 'otf', 'webp'];
+  if (formats.join(' ').includes(ext)) {
+    return true;
+  }
+  return false;
 };
 
 const getAssetFileName = (pathname, prefix, isCanonical = false) => {
@@ -73,9 +86,9 @@ const getAssetFileName = (pathname, prefix, isCanonical = false) => {
     ].join('-');
   }
   return filename;
-};
+}
 
-export const prepareAssets = (html, pageUrlHost, pageUrlOrigin, assetsDirname) => {
+export const prepareAssets = (html, pageUrlHost, urlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
   const $ = cheerio.load(preparedHTML);
 
@@ -88,27 +101,25 @@ export const prepareAssets = (html, pageUrlHost, pageUrlOrigin, assetsDirname) =
   const assets = selectedTags
     .filter((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
-
       const linkValue = $(tag).attr(attr);
-      const { host, ext } = getUrlParams(linkValue);
 
+      const { pathname, host, ext } = getUrlParams(linkValue);
       const isCanonical = $(tag).attr('rel') === 'canonical';
-      const isAssetFile = assetFileFormats.join(' ').includes(ext);
-      const isPageUrlHost = host === pageUrlHost || host === '/';
 
-      return (isAssetFile && isPageUrlHost) || isCanonical;
+      return (isAssetFile(ext) && (host === pageUrlHost || host === '/'))
+          || isCanonical;
     })
     .map((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
       const value = $(tag).attr(attr);
-      const { pathname } = getUrlParams(value);
+      const { pathname, host } = getUrlParams(value);
 
       const isCanonical = $(tag).attr('rel') === 'canonical';
       const filenamePrefix = formatPath(pageUrlHost);
       const filename = getAssetFileName(pathname, filenamePrefix, isCanonical);
 
       const asset = {
-        url: path.join(pageUrlOrigin, pathname),
+        url: path.join(urlOrigin, clearExtensionParams(pathname)),
         filename,
       };
       asset.filePath = [assetsDirname, '/', asset.filename].join('');
@@ -165,6 +176,7 @@ export default (pageUrl, outputDirname = '') => {
       data.assets
         .map((asset) => downloadAsset(fullOutputAssetsDirname, asset)
           .catch(_.noop));
+
       const tasks = data.assets.map((asset) => {
         console.log(asset.url);
         log('asset', asset.url, asset.filename);
