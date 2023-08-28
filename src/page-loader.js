@@ -9,18 +9,7 @@ import _ from 'lodash';
 const assetFileFormats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf', 'otf', 'webp'];
 
 const log = debug('page-loader');
-export const getPathName = (link) => {
-  let pathName;
 
-  try {
-    const { pathname } = new URL(link);
-    pathName = pathname;
-  } catch (e) {
-    pathName = link;
-  }
-
-  return pathName;
-};
 export const formatPath = (pathname) => pathname
   .replace(/^www\./, '')
   .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
@@ -87,34 +76,24 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
 
   // вытянуть все теги со ссылками
   const searchedTags = ['a', 'img', 'link', 'script'];
-  const selectedTags = searchedTags
-    .map((tag) => $(tag).toArray())
-    .flat();
+  const selectedTags = searchedTags.map((tag) => $(tag).toArray()).flat();
 
-  const assets = selectedTags
-    .filter((tag) => {
-      const attr = $(tag).attr('src') ? 'src' : 'href';
-      const value = $(tag).attr(attr);
-      if (!value) return false;
+  const assets = [];
 
-      const { host, ext } = getUrlParams(value);
+  selectedTags.forEach((tag) => {
+    const attr = $(tag).attr('src') ? 'src' : 'href';
+    const value = $(tag).attr(attr);
+    if (!value) return false;
 
-      const isCanonical = $(tag).attr('rel') === 'canonical';
-      const isAssetFile = assetFileFormats.join(' ').includes(ext);
-      const isPageUrlHost = host === urlHost || host === '/';
+    const { pathname, host, ext } = getUrlParams(value);
 
-      return (isAssetFile && isPageUrlHost) || isCanonical;
-    })
-    .map((tag) => {
-      const attr = $(tag).attr('src') ? 'src' : 'href';
-      const value = $(tag).attr(attr);
+    const isCanonical = $(tag).attr('rel') === 'canonical';
+    const isAssetFile = assetFileFormats.join(' ').includes(ext);
+    const isPageUrlHost = host === urlHost || host === '/';
 
-      const { pathname } = getUrlParams(value);
-
-      const isCanonical = $(tag).attr('rel') === 'canonical';
+    if ((isAssetFile && isPageUrlHost) || isCanonical) {
       const filenamePrefix = formatPath(urlHost);
       const filename = getAssetFileName(pathname, filenamePrefix, isCanonical);
-
       const asset = {
         url: path.join(urlOrigin, formatPathExtension(pathname)),
         filename,
@@ -123,8 +102,10 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
       // Replace html asset link value
       $(tag).attr(attr, asset.filePath);
 
-      return asset;
-    });
+      assets.push(asset);
+    }
+    return null;
+  });
 
   const data = {
     html: $.html(),
