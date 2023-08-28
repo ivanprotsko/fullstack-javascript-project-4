@@ -7,20 +7,10 @@ import Listr from 'listr';
 import _ from 'lodash';
 
 const log = debug('page-loader');
-export const getPathName = (link) => {
-  let pathName;
 
-  try {
-    const { pathname } = new URL(link);
-    pathName = pathname;
-  } catch (e) {
-    pathName = link;
-  }
-
-  return pathName;
-};
+const assetFileFormats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf', 'otf', 'webp'];
 export const formatPath = (pathname) => pathname
-  .replace(/^www\./, '')
+  .replace(/^www\./, '') // removes 'www.' from the beginning of a string
   .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
   .replace(/\/$/, '') // removes the last symbol '/' (example: /some-folder/some-page/ ← the target '/')
   .replace(/^\//g, '') // removes the first (root) symbol '/' if it exists;
@@ -34,38 +24,56 @@ export const urlToFilename = (slug) => {
 
 export const urlToDirname = (slug) => [formatPath(slug), '_files'].join('');
 
-const formatPathExtension = (pathName) => {
+const clearExtensionParams = (pathName) => {
   if (!pathName) return null;
-  return pathName.replace(/\?.*$/g, '');
-}; // delete all symbols after '?' in extension
+  return pathName.replace(/\?.*$/g, ''); // deletes all symbols after character '?' in extension, example: '.css?v.1.2';
+};
+
 const parseFileFormat = (pathName) => {
   if (!pathName) return null;
-  const formattedPath = formatPathExtension(pathName).split('.');
+  const formattedPath = clearExtensionParams(pathName).split('.');
   const lastElement = formattedPath.length - 1;
   const ext = formattedPath[lastElement];
   return ext === undefined ? null : ext;
 };
 
-const isAssetFile = (value, urlHost) => {
+const getUrlParams = (value) => {
   if (!value) return null;
-  let pathname;
+
+  let pathname, host;
   try {
     const valueUrl = new URL(value);
-    if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
+    pathname = valueUrl.pathname;
+    host = valueUrl.host;
   } catch (e) {
     pathname = value;
+    host = '/';
   }
-
   const ext = parseFileFormat(pathname);
-  const formats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf'];
-  if (formats.join(' ').includes(ext)) {
-    return true;
-  }
-  return false;
-};
-export const urlToFilenamePrefix = (url) => formatPath(url);
+  const urlParams = { 
+    host, 
+    pathname: clearExtensionParams(pathname), 
+    ext };
 
-export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
+  return urlParams;
+}
+
+const getAssetFileName = (pathname, prefix, isCanonical = false) => {
+  let filename;
+  if (isCanonical) {
+    filename = [prefix, '-', formatPath(pathname), '.html'].join('');
+  } else {
+    const { dir, base } = path.parse(pathname);
+    filename = [
+      prefix,
+      formatPath(dir),
+      clearExtensionParams(base),
+    ].join('-');
+  }
+  return filename;
+}
+
+export const prepareAssets = (html, pageUrlHost, pageUrlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
   const $ = cheerio.load(preparedHTML);
 
@@ -78,42 +86,27 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   const assets = selectedTags
     .filter((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
-      const value = $(tag).attr(attr);
+
+      const linkValue = $(tag).attr(attr);
+      const { host, ext } = getUrlParams(linkValue);
 
       const isCanonical = $(tag).attr('rel') === 'canonical';
+      const isAssetFile = assetFileFormats.join(' ').includes(ext);
+      const isPageUrlHost = host === pageUrlHost || host === '/';
 
-      return isAssetFile(value, urlHost) || isCanonical;
+      return (isAssetFile && isPageUrlHost) || isCanonical;
     })
     .map((tag) => {
       const attr = $(tag).attr('src') ? 'src' : 'href';
       const value = $(tag).attr(attr);
+      const { pathname, host } = getUrlParams(value);
 
       const isCanonical = $(tag).attr('rel') === 'canonical';
-
-      const filenamePrefix = formatPath(urlHost);
-      let filename;
-
-      let pathname;
-      try {
-        const valueUrl = new URL(value);
-        if (valueUrl.host === urlHost) pathname = valueUrl.pathname;
-      } catch (e) {
-        pathname = value;
-      }
-
-      if (isCanonical) {
-        filename = [filenamePrefix, '-', formatPath(pathname), '.html'].join('');
-      } else {
-        const { dir, base } = path.parse(pathname);
-        filename = [
-          filenamePrefix,
-          formatPath(dir),
-          formatPathExtension(base),
-        ].join('-');
-      }
+      const filenamePrefix = formatPath(pageUrlHost);
+      const filename = getAssetFileName(pathname, filenamePrefix, isCanonical);
 
       const asset = {
-        url: path.join(urlOrigin, formatPathExtension(pathname)),
+        url: path.join(pageUrlOrigin, pathname),
         filename,
       };
       asset.filePath = [assetsDirname, '/', asset.filename].join('');
@@ -170,7 +163,6 @@ export default (pageUrl, outputDirname = '') => {
       data.assets
         .map((asset) => downloadAsset(fullOutputAssetsDirname, asset)
           .catch(_.noop));
-
       const tasks = data.assets.map((asset) => {
         console.log(asset.url);
         log('asset', asset.url, asset.filename);
