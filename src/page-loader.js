@@ -159,21 +159,23 @@ export default (pageUrl, outputDirname = '') => {
         url.origin,
         assetsDirname,
       ); // функция, которая парсит html
-      log('create (if not exists) directory for assets', fullOutputAssetsDirname);
+      log('create (if not exists) directory for the page and its assets', fullOutputAssetsDirname);
+      return fsp.access(fullOutputDirname)
+        .catch(() => fsp.mkdir(fullOutputDirname));
     })
-    .then(() => fsp.access(fullOutputDirname))
-    .catch(() => fsp.mkdir(fullOutputDirname))
     .then(() => {
       log('write html file', fullOutputFilename);
       return fsp.writeFile(fullOutputFilename, data.html);
     })
-    .then(() => fsp.access(fullOutputAssetsDirname))
-    .catch(() => fsp.mkdir(fullOutputAssetsDirname))
+    .then(() => {
+      log('create (if not exists) directory for assets', fullOutputAssetsDirname);
+      return fsp.access(fullOutputAssetsDirname)
+        .catch(() => fsp.mkdir(fullOutputAssetsDirname));
+    })
     .then(() => {
       data.assets
         .map((asset) => downloadAsset(fullOutputAssetsDirname, asset)
           .catch(_.noop));
-
       const tasks = data.assets.map((asset) => {
         console.log(asset.url);
         log('asset', asset.url, asset.filename);
