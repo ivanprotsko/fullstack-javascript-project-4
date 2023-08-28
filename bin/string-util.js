@@ -1,8 +1,7 @@
 import { readFileSync } from 'fs';
 import { Command } from 'commander';
-import metaData from './package.json' assert { type: 'json' };
 
-// const metaData = JSON.parse(readFileSync('./package.json', 'utf8'));
+const metaData = JSON.parse(readFileSync('./package.json', 'utf8'));
 
 const program = new Command();
 const currentDir = process.cwd();
