@@ -6,10 +6,9 @@ import fsp from 'fs/promises';
 import Listr from 'listr';
 import _ from 'lodash';
 
-
 const log = debug('page-loader');
 
-export const formatPath = (path) => path
+export const formatPath = (pathname) => pathname
   .replace(/^www\./, '')
   .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
   .replace(/\/$/, '') // removes the last symbol '/' (example: /some-folder/some-page/ ← the target '/')
@@ -28,7 +27,7 @@ const formatPathExtension = (pathName) => {
   if (!pathName) return null;
   return pathName.replace(/\?.*$/g, '');
 }; // delete all symbols after '?' in extension
-const parseFileFormat = (pathName) => { 
+const parseFileFormat = (pathName) => {
   if (!pathName) return null;
   const formattedPath = formatPathExtension(pathName).split('.');
   const lastElement = formattedPath.length - 1;
@@ -43,7 +42,6 @@ const getAssetFileName = (pathname, prefix = '') => {
   if (!ext) {
     if (pathname === '/') filename = [prefix, '.html'].join('');
     else filename = [prefix, '-', formatPath(pathname), '.html'].join('');
-
   }
   if (ext) {
     filename = [
@@ -114,11 +112,9 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
 };
 export const downloadAsset = (dirname, asset) => axios.get(asset.url, { responseType: 'arraybuffer' })
   .then((response) => {
-    console.log(asset);
     const filePath = path.join(dirname, asset.filename);
     return fsp.writeFile(filePath, response.data, 'binary');
   });
-
 
 export default (pageUrl, outputDirname = '') => {
   const url = new URL(pageUrl);

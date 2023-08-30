@@ -55,7 +55,7 @@ program
 
 program.parse();
 
-export const url = program.args[0]
+export const url = program.args[0];
 console.log(JSON.stringify(process.argv));
 
 export const directory = program.opts().output;
