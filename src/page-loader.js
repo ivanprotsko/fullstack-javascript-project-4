@@ -6,11 +6,10 @@ import fsp from 'fs/promises';
 import Listr from 'listr';
 import _ from 'lodash';
 
-const assetFileFormats = ['svg', 'png', 'jpg', 'jpeg', 'gif', 'ico', 'js', 'css', 'woff2', 'ttf', 'otf', 'webp'];
 
 const log = debug('page-loader');
 
-export const formatPath = (pathname) => pathname
+export const formatPath = (path) => path
   .replace(/^www\./, '')
   .replace(/^https?:\/\//, '') // removes 'http://' or 'https://'
   .replace(/\/$/, '') // removes the last symbol '/' (example: /some-folder/some-page/ ← the target '/')
@@ -18,7 +17,7 @@ export const formatPath = (pathname) => pathname
   .replace(/\.|\//g, '-') // changes symbols '/' & '.' to '-';
   .replace(/[:/?#[\]@+=&]/g, '-'); //  replace other symbols: [':', '?', '#', '[', ']', '@', '=', '+', '&'];
 
-export const urlToFilename = (slug) => {
+export const urlToHtmlFilename = (slug) => {
   const fileName = formatPath(slug);
   return [fileName, '.html'].join('');
 };
@@ -29,7 +28,7 @@ const formatPathExtension = (pathName) => {
   if (!pathName) return null;
   return pathName.replace(/\?.*$/g, '');
 }; // delete all symbols after '?' in extension
-const parseFileFormat = (pathName) => {
+const parseFileFormat = (pathName) => { 
   if (!pathName) return null;
   const formattedPath = formatPathExtension(pathName).split('.');
   const lastElement = formattedPath.length - 1;
@@ -37,18 +36,23 @@ const parseFileFormat = (pathName) => {
   return ext === undefined ? null : ext;
 };
 
-const getAssetFileName = (pathname, prefix, isCanonical = false) => {
+const getAssetFileName = (pathname, prefix = '') => {
+  const { dir, base, ext } = path.parse(pathname);
+
   let filename;
-  if (isCanonical) {
-    filename = [prefix, '-', formatPath(pathname), '.html'].join('');
-  } else {
-    const { dir, base } = path.parse(pathname);
+  if (!ext) {
+    if (pathname === '/') filename = [prefix, '.html'].join('');
+    else filename = [prefix, '-', formatPath(pathname), '.html'].join('');
+
+  }
+  if (ext) {
     filename = [
       prefix,
       formatPath(dir),
       formatPathExtension(base),
     ].join('-');
   }
+
   return filename;
 };
 
@@ -74,8 +78,7 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   const preparedHTML = html.toString();
   const $ = cheerio.load(preparedHTML);
 
-  // вытянуть все теги со ссылками
-  const searchedTags = ['a', 'img', 'link', 'script'];
+  const searchedTags = ['img', 'link', 'script'];
   const selectedTags = searchedTags.map((tag) => $(tag).toArray()).flat();
 
   const assets = [];
@@ -83,17 +86,13 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   selectedTags.forEach((tag) => {
     const attr = $(tag).attr('src') ? 'src' : 'href';
     const value = $(tag).attr(attr);
-    if (!value) return false;
+    if (!value) return null;
 
-    const { pathname, host, ext } = getUrlParams(value);
+    const { pathname, host } = getUrlParams(value);
 
-    const isCanonical = $(tag).attr('rel') === 'canonical';
-    const isAssetFile = assetFileFormats.join(' ').includes(ext);
-    const isPageUrlHost = host === urlHost || host === '/';
-
-    if ((isAssetFile && isPageUrlHost) || isCanonical) {
-      const filenamePrefix = formatPath(urlHost);
-      const filename = getAssetFileName(pathname, filenamePrefix, isCanonical);
+    if (host === urlHost || host === '/') {
+      const filenamePrefix = urlHost.replace(/\./g, '-');
+      const filename = getAssetFileName(pathname, filenamePrefix);
       const asset = {
         url: path.join(urlOrigin, formatPathExtension(pathname)),
         filename,
@@ -114,17 +113,18 @@ export const prepareAssets = (html, urlHost, urlOrigin, assetsDirname) => {
   return data;
 };
 export const downloadAsset = (dirname, asset) => axios.get(asset.url, { responseType: 'arraybuffer' })
-  .then((response) => Buffer.from(response.data, 'binary').toString('binary'))
-  .then((data) => {
-    const filePath = ['/', dirname, '/', asset.filename].join('');
-    return fsp.writeFile(filePath, data, 'binary');
+  .then((response) => {
+    console.log(asset);
+    const filePath = path.join(dirname, asset.filename);
+    return fsp.writeFile(filePath, response.data, 'binary');
   });
+
 
 export default (pageUrl, outputDirname = '') => {
   const url = new URL(pageUrl);
   const slug = `${url.hostname}${url.pathname}`;
 
-  const filename = urlToFilename(slug); // преобзразовывем имя в нужный формат
+  const filename = urlToHtmlFilename(slug); // преобзразовывем имя в нужный формат
   const assetsDirname = urlToDirname(slug);
 
   const fullOutputDirname = path.resolve(process.cwd(), outputDirname);

@@ -46,9 +46,16 @@ program
   .version(metaData.version);
 program
   .option('-o, --output <directory>', 'output dir', currentDir)
-  .argument('<URL>', 'webpage URL to download');
-program
-  .parse();
+  .argument('<URL>', 'webpage URL to download')
+  .option('-s, --separator <char>', 'separator character', ',')
+  .action((str, options) => {
+    const limit = options.first ? 1 : undefined;
+    console.log(str.split(options.separator, limit));
+  });
 
-export const [url] = program.args;
+program.parse();
+
+export const url = program.args[0]
+console.log(JSON.stringify(process.argv));
+
 export const directory = program.opts().output;
