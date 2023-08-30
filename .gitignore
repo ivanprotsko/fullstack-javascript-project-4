@@ -6,7 +6,7 @@ coverage
 logs/
 *.log
 tmp/
-drafts/
+../../../Library/Application Support/JetBrains/WebStorm2022.3/scratches/drafts/
 cd code-user/ # Переходим в директорию code-user
 git log -p
 echo 'Hello Hexlet!' > hexlet2.txt
