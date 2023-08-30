@@ -2,11 +2,6 @@ import path from 'path';
 import fsp from 'fs/promises';
 import prettify from 'html-prettify';
 import { prepareAssets } from '../src/page-loader.js';
-import os from "os";
-
-const temporaryFolder = os.tmpdir();
-const directory = 'test-directory';
-const fullPath = `${temporaryFolder}/${directory}`;
 
 test('Replace links', async () => {
   const { hostname, origin } = new URL('https://ru.hexlet.io/courses');
