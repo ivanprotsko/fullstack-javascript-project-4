@@ -23,11 +23,11 @@ export const urlToHtmlFilename = (slug) => {
 
 export const urlToDirname = (slug) => [formatPath(slug), '_files'].join('');
 
-const formatPathExtension = (pathName) => {
+export const formatPathExtension = (pathName) => {
   if (!pathName) return null;
   return pathName.replace(/\?.*$/g, '');
 }; // delete all symbols after '?' in extension
-const parseFileFormat = (pathName) => {
+export const parseFileFormat = (pathName) => {
   if (!pathName) return null;
   const formattedPath = formatPathExtension(pathName).split('.');
   const lastElement = formattedPath.length - 1;
@@ -35,7 +35,7 @@ const parseFileFormat = (pathName) => {
   return ext === undefined ? null : ext;
 };
 
-const getAssetFileName = (pathname, prefix = '') => {
+export const getAssetFileName = (pathname, prefix = '') => {
   const { dir, base, ext } = path.parse(pathname);
 
   let filename;
@@ -54,7 +54,7 @@ const getAssetFileName = (pathname, prefix = '') => {
   return filename;
 };
 
-const getUrlParams = (value) => {
+export const getUrlParams = (value) => {
   if (!value) return null;
 
   let pathname; let
@@ -119,7 +119,6 @@ export const downloadAsset = (dirname, asset) => axios.get(asset.url, { response
 export default (pageUrl, outputDirname = '') => {
   const url = new URL(pageUrl);
   const slug = `${url.hostname}${url.pathname}`;
-
   const filename = urlToHtmlFilename(slug); // преобзразовывем имя в нужный формат
   const assetsDirname = urlToDirname(slug);
 
