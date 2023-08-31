@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { readFileSync } from 'fs';
 import pageLoader from '../src/page-loader.js';
 
-const metaData = JSON.parse(readFileSync('./package.json'));
+const metaData = {
+  version: '1.0.0',
+};
+
 const program = new Command();
 const currentDir = process.cwd();
 program
